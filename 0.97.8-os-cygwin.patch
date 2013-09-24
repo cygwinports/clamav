@@ -1,0 +1,239 @@
+--- origsrc/clamav-0.97.8/contrib/init/Cygwin/clamd	1969-12-31 18:00:00.000000000 -0600
++++ src/clamav-0.97.8/contrib/init/Cygwin/clamd	2013-05-13 10:38:51.931144500 -0500
+@@ -0,0 +1,152 @@
++#! /bin/bash
++#
++# crond   Start/Stop the clam antivirus daemon. 0.8x series
++# v1.0 2004-10-18 Reini Urban rurban@x-ray.at
++#
++# chkconfig: 2345 90 60
++# description: clamd is a standard UNIX program that scans for Viruses.
++# processname: clamd
++# config: /etc/clamd.conf
++# pidfile: /var/run/clamd.pid
++
++PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
++PREFIX=/usr
++CONFIG=/etc/clamd.conf
++PIDFILE=/var/run/clamd.pid
++LOGFILE=/var/log/clamd.log
++SOCKET=/var/run/clamd.sock
++
++# Source function library.
++if [ -f /etc/init.d/functions ] ; then
++  . /etc/init.d/functions
++fi
++
++RETVAL=0
++
++# See how we were called.
++
++prog="clamd"
++progdir="/usr/sbin"
++DAEMON="$progdir/$prog.exe"
++
++test -f $DAEMON || exit 0
++
++# Source configuration
++if [ -f /etc/sysconfig/$prog ] ; then
++    . /etc/sysconfig/$prog
++fi
++
++start() {
++        echo -n $"Starting $prog: "
++	# check if cygrunsrv process
++        cygrunsrv --start $prog
++        RETVAL=$?
++        echo
++        [ $RETVAL -eq 0 ] && touch $PIDFILE  && echo "done."
++        return $RETVAL
++}
++
++stop() {
++        echo -n $"Stopping $prog: "
++	cygrunsrv --stop $prog
++        if test -r $PIDFILE; then
++            kill `cat $PIDFILE` 2> /dev/null || echo -n " failed"
++        else
++            echo -n " no PID file"
++        fi
++	# this really needs a long time to stop.
++        RETVAL=$?
++        echo "."
++        [ $RETVAL -eq 0 ] && rm -f $PIDFILE $SOCKET && echo "done."
++        return $RETVAL
++}
++
++rhstatus() {
++        # service status
++        cygrunsrv -Q $prog
++        # connect(): No such file or directory
++	/usr/bin/clamdscan /usr/sbin/clamd.exe
++	#status clamd
++}
++
++restart() {
++        echo -n $"Restarting $prog: "
++        $0 stop
++        sleep 1
++        $0 start
++        echo "done."
++}
++
++installcron() {
++    ( crontab -l | grep freshclam >/dev/null 2>&1 ) || ( \
++	echo "add something like this to your cronjob:"
++	echo
++	echo "*  */3 * * *	/usr/bin/freshclam >>/var/log/freshclam.log 2>&1"
++	echo "#*  */3 * * *	/usr/bin/freshclam >>/var/log/freshclam.log 2>&1" >> /var/cron/tabs/$USER
++	kill -s HUP `cat /var/run/cron.pid`
++	crontab -e )
++}
++install() {
++        freshclam
++        echo -n $"Installing $prog daemon: "
++	# some safety measures
++	touch $LOGFILE $PIDFILE
++	chgrp 18 $LOGFILE $PIDFILE
++	chmod g+w $LOGFILE $PIDFILE
++	rm -f $SOCKET
++	#it was compiled with uid=18
++	cygrunsrv --install $prog --path $DAEMON -e CYGWIN="$CYGWIN" --disp "CYGWIN `$DAEMON --version`"
++        echo "done."
++}
++uninstall() {
++        echo -n $"Uninstalling $prog daemon: "
++	stop
++	cygrunsrv --remove $prog
++        echo "done."
++}
++reload() {
++        echo -n $"Reloading $prog daemon configuration: "
++	echo "unsupported. $0 restart"
++	return 1
++
++	/usr/bin/kill -HUP `cat $PIDFILE`
++        RETVAL=$?
++        [ $RETVAL -eq 0 ] && echo "done."
++        RETVAL=$?
++        return $RETVAL
++}
++
++case "$1" in
++  start)
++        start
++        ;;
++  stop)
++        stop
++        ;;
++  restart)
++        restart
++        ;;
++  reload)
++        reload
++        ;;
++  install)
++        install
++        ;;
++  installcron)
++        installcron
++        ;;
++  uninstall)
++        uninstall
++        ;;
++  status)
++        rhstatus
++        ;;
++  condrestart)
++        [ -f $PIDFILE ] && restart || :
++        ;;
++  *)
++        echo $"Usage: $0 {start|stop|status|install|uninstall|installcron|restart|condrestart}"
++        exit 1
++esac
++
++exit $?
+--- origsrc/clamav-0.97.8/libclamav/bytecode_detect.c	2013-04-17 10:25:09.000000000 -0500
++++ src/clamav-0.97.8/libclamav/bytecode_detect.c	2013-05-13 10:38:51.962472500 -0500
+@@ -234,8 +234,10 @@ void cli_detect_environment(struct cli_e
+     env->os_category = os_win64;
+ #elif defined(_WIN32)
+     env->os_category = os_win32;
++#elif defined(__CYGWIN__)
++    env->os_category = os_cygwin;
+ #else
+-    env->os_category = os_generic;
++    env->os_category = os_unknown;
+ #endif
+ 
+     env->os = llvm_os_UnknownOS;
+--- origsrc/clamav-0.97.8/libclamav/bytecode_detect.h	2013-04-17 10:23:42.000000000 -0500
++++ src/clamav-0.97.8/libclamav/bytecode_detect.h	2013-05-13 10:38:51.962472500 -0500
+@@ -63,6 +63,7 @@ enum os_kind_conf {
+   os_solaris,
+   os_win32,
+   os_win64,
++  os_cygwin,
+   os_ANY = 0xff
+ };
+ 
+--- origsrc/clamav-0.97.8/libclamav/c++/bytecode2llvm.cpp	2013-04-17 10:25:09.000000000 -0500
++++ src/clamav-0.97.8/libclamav/c++/bytecode2llvm.cpp	2013-05-13 10:38:51.962472500 -0500
+@@ -330,6 +330,9 @@ extern "C" void __chkstk(void);
+ extern "C" void _chkstk(void);
+ #endif
+ #endif
++#ifdef __CYGWIN__
++extern "C" void _alloca(void);
++#endif
+ // Resolve integer libcalls, but nothing else.
+ static void* noUnknownFunctions(const std::string& name) {
+     void *addr =
+@@ -354,6 +357,9 @@ static void* noUnknownFunctions(const st
+ 	.Case("_chkstk", (void*)(intptr_t)_chkstk)
+ #endif
+ #endif
++#ifdef __CYGWIN__
++	.Case("_alloca", (void*)(intptr_t)_alloca)
++#endif
+ 	.Default(0);
+     if (addr)
+ 	return addr;
+--- origsrc/clamav-0.97.8/libclamav/c++/detect.cpp	2013-04-17 10:23:42.000000000 -0500
++++ src/clamav-0.97.8/libclamav/c++/detect.cpp	2013-05-13 10:38:51.962472500 -0500
+@@ -137,7 +137,7 @@ void cli_detect_env_jit(struct cli_envir
+ 	    env->os = llvm_os_UnknownOS;
+ 	    break;
+ 	CASE_OS(AuroraUX, os_solaris);
+-	CASE_OS(Cygwin, os_win32);
++	CASE_OS(Cygwin, os_cygwin);
+ 	CASE_OS(Darwin, os_darwin);
+ 	CASE_OS(DragonFly, os_bsd);
+ 	CASE_OS(FreeBSD, os_bsd);
+--- origsrc/clamav-0.97.8/libclamav/others.c	2013-04-17 10:25:09.000000000 -0500
++++ src/clamav-0.97.8/libclamav/others.c	2013-05-13 10:38:51.962472500 -0500
+@@ -115,7 +115,10 @@ static lt_dlhandle lt_dlfind(const char
+ {
+     static const char *suffixes[] = {
+ 	LT_MODULE_EXT"."LIBCLAMAV_FULLVER,
+-	PASTE(LT_MODULE_EXT".", LIBCLAMAV_MAJORVER),
++	LT_MODULE_EXT"."LIBCLAMAV_MAJORVER,
++#ifdef __CYGWIN__
++	"-"LIBCLAMAV_MAJORVER".dll",
++#endif
+ 	LT_MODULE_EXT,
+ 	"."LT_LIBEXT
+     };
+@@ -166,7 +169,12 @@ static void cli_rarload(void) {
+     if(is_rar_initd) return;
+     is_rar_initd = 1;
+ 
++#ifdef __CYGWIN__
++    // libtool cygwin quirks
++    rhandle = lt_dlfind("cygclamunrar_iface", "unrar");
++#else
+     rhandle = lt_dlfind("libclamunrar_iface", "unrar");
++#endif
+     if (!rhandle)
+ 	return;
+ 

@@ -1,0 +1,15 @@
+--- origsrc/clamav-0.97.8/database/Makefile.am	2013-04-17 10:23:42.000000000 -0500
++++ src/clamav-0.97.8/database/Makefile.am	2013-09-24 14:22:16.778616800 -0500
+@@ -23,10 +23,11 @@ CLAMAVUSER = @CLAMAVUSER@
+ CLAMAVGROUP = @CLAMAVGROUP@
+  
+ install-data-local:
+-	@test -s $(srcdir)/main.cvd -a -s $(srcdir)/daily.cvd || exit 0;\
++	@test -s $(srcdir)/main.cvd -a -s $(srcdir)/daily.cvd -a -s $(srcdir)/bytecode.cvd || exit 0;\
+ 	$(mkinstalldirs) $(DESTDIR)$(DBINST);\
+ 	test -f $(DESTDIR)$(DBINST)/main.cvd || test -f $(DESTDIR)$(DBINST)/main.cld || $(INSTALL_DATA) $(srcdir)/main.cvd $(DESTDIR)$(DBINST);\
+ 	test -f $(DESTDIR)$(DBINST)/daily.cvd || test -f $(DESTDIR)$(DBINST)/daily.cld || $(INSTALL_DATA) $(srcdir)/daily.cvd $(DESTDIR)$(DBINST);\
++	test -f $(DESTDIR)$(DBINST)/bytecode.cvd || $(INSTALL_DATA) $(srcdir)/bytecode.cvd $(DESTDIR)$(DBINST);\
+ 	if test `id|sed -e 's/^.[^(]*(\([^)]*\)).*/\1/'` = "root" && test -n "${CLAMAVUSER}" && test -n "${CLAMAVGROUP}"; then \
+ 	    chmod 775 $(DESTDIR)$(DBINST); \
+ 	    chown ${CLAMAVUSER} $(DESTDIR)$(DBINST); \

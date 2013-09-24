@@ -1,0 +1,99 @@
+NAME="clamav"
+VERSION=0.97.8
+RELEASE=1
+CATEGORY="Utils"
+SUMMARY="Anti-virus toolkit"
+DESCRIPTION="Clam AntiVirus is a GPL anti-virus toolkit for UNIX, featuring
+command-line scanner, fast, multi-threaded daemon, database updater with
+support for digital signatures, virus scanner C library, detection of over
+20000 viruses, worms and trojans, built-in support for RAR (2.0), Zip, Gzip,
+Bzip2, built-in support for Mbox, Maildir and raw mail files"
+HOMEPAGE="http://clamav.net/"
+SRC_URI="mirror://sourceforge/clamav/clamav-${VERSION}.tar.gz"
+SRC_URI+=" positive-tests.zip"
+PATCH_URI="
+	0.97.8-autoconf.patch
+	0.97.8-datadir.patch
+	0.97.8-db-install.patch
+	0.97.8-os-cygwin.patch
+"
+
+PKG_NAMES="clamav lib${NAME}6 lib${NAME}-devel ${NAME}-db"
+clamav_CONTENTS="etc/ usr/bin/*.exe usr/sbin/ usr/share/doc/ usr/share/man/"
+libclamav6_CATEGORY="Libs"
+libclamav6_CONTENTS="usr/*/cyg*-6.dll"
+libclamav_devel_CATEGORY="Libs"
+libclamav_devel_CONTENTS="usr/bin/clamav-config usr/include/ usr/lib/lib* usr/lib/pkgconfig/"
+clamav_db_CONTENTS="var/lib/clamav/"
+
+# created by os-cygwin.patch
+DISTCLEANFILES="contrib/init/Cygwin/clamd libclamav/version.h"
+DIFF_EXCLUDES="argz.m4 ltdl.m4 libltdl"
+
+CYGPORT_USE_UNSTABLE_API=1
+src_unpack_hook() {
+	pushd database
+	rm -f main.cvd daily.cvd bytecode.cvd
+	wget http://db.local.clamav.net/{main,daily,bytecode}.cvd
+	popd
+}
+
+src_compile() {
+	cd ${S}
+	cygautoreconf
+	lndirs
+
+	cd ${B}
+	cygconf \
+		${ARCH_i686+--with-llvm --enable-llvm} \
+		--enable-pthreads --disable-dependency-tracking \
+		--disable-clamav --disable-clamuko --disable-milter \
+		--with-user=SYSTEM --with-group=SYSTEM \
+		--with-dbdir=/var/lib/clamav \
+		ac_cv_ld_version_script=no
+	cygmake
+}
+
+src_install() {
+	cd ${B}
+	cyginstall
+
+	rm ${D}/usr/share/man/man*/clamav-milter*
+
+	cd ${S}
+	insinto /etc
+	doins etc/clamd.conf etc/freshclam.conf
+	make_etc_defaults /etc/clamd.conf /etc/freshclam.conf
+
+	exeinto /etc/rc.d/init.d
+	doexe contrib/init/Cygwin/clamd
+}
+
+DOCS="docs/*.pdf"
+HTMLDOCS="docs/html/*"
+
+src_test() {
+	cd ${B}/test
+	run="${B}/clamscan/clamscan --no-summary"
+	unzip -uo ${top}/positive-tests.zip
+	result=${B}/test/positive.result
+	echo -n "" > $result
+	for t in test*
+	do
+		$run $t >> $result
+	done
+	diff -bc ${B}/test/positive.expected $result
+
+	result=${B}/test/negative.result
+	echo -n "" > $result
+	for t in clam*
+	do
+		$run $t >> $result
+	done
+	diff -bc ${B}/test/negative.expected $result
+
+	# make test
+	# freshclam.conf already patched by prep
+	cd ${B}
+	${B}/freshclam/freshclam --config-file=${S}/etc/freshclam.conf
+}
