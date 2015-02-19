@@ -212,14 +212,12 @@
  	CASE_OS(FreeBSD, os_bsd);
 --- origsrc/clamav-0.97.8/libclamav/others.c	2013-04-17 10:25:09.000000000 -0500
 +++ src/clamav-0.97.8/libclamav/others.c	2013-05-13 10:38:51.962472500 -0500
-@@ -115,7 +115,10 @@ static lt_dlhandle lt_dlfind(const char
- {
+@@ -116,6 +116,9 @@ static lt_dlhandle lt_dlfind(const char
      static const char *suffixes[] = {
  	LT_MODULE_EXT"."LIBCLAMAV_FULLVER,
--	PASTE(LT_MODULE_EXT".", LIBCLAMAV_MAJORVER),
-+	LT_MODULE_EXT"."LIBCLAMAV_MAJORVER,
+ 	PASTE(LT_MODULE_EXT".", LIBCLAMAV_MAJORVER),
 +#ifdef __CYGWIN__
-+	"-"LIBCLAMAV_MAJORVER".dll",
++	PASTE("-", LIBCLAMAV_MAJORVER) ".dll",
 +#endif
  	LT_MODULE_EXT,
  	"."LT_LIBEXT
