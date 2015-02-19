@@ -1,6 +1,6 @@
 NAME="clamav"
 VERSION=0.98.6
-RELEASE=1
+RELEASE=2
 CATEGORY="Utils"
 SUMMARY="Anti-virus toolkit"
 DESCRIPTION="Clam AntiVirus is a GPL anti-virus toolkit for UNIX, featuring
@@ -23,6 +23,7 @@ PATCH_URI="
 	0.97.8-os-cygwin.patch
 	0.98.4-cygwin-hostid.patch
 	0.98.6-system-llvm.patch
+	0.98.6-system-libmspack.patch
 "
 
 PKG_NAMES="clamav lib${NAME}6 lib${NAME}-devel ${NAME}-db"
@@ -36,13 +37,16 @@ clamav_db_CONTENTS="var/lib/clamav/"
 
 # created by os-cygwin.patch
 DISTCLEANFILES="contrib/init/Cygwin/clamd libclamav/version.h"
-DIFF_EXCLUDES="argz.m4 ltdl.m4 libltdl"
+DIFF_EXCLUDES="ltargz.m4 ltdl.m4 libltdl"
 
 CYGPORT_USE_UNSTABLE_API=1
 src_unpack_hook() {
 	# workaround for unrar-less sources
 	mkdir -p libclamunrar{,_iface}
 	touch libclamunrar/{Makefile.in,all,install}
+
+	# for system libmspack patch
+	rm -f libclamav/{chmunpack,mspack,cab,libmspack}.{c,h}
 
 	mv main-*.cvd database/main.cvd
 	mv daily-*.cvd database/daily.cvd
