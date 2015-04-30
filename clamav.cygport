@@ -1,6 +1,6 @@
 NAME="clamav"
-VERSION=0.98.6
-RELEASE=2
+VERSION=0.98.7
+RELEASE=1
 CATEGORY="Utils"
 SUMMARY="Anti-virus toolkit"
 DESCRIPTION="Clam AntiVirus is a GPL anti-virus toolkit for UNIX, featuring
@@ -10,19 +10,18 @@ support for digital signatures, virus scanner C library, detection of over
 Bzip2, built-in support for Mbox, Maildir and raw mail files"
 HOMEPAGE="http://clamav.net/"
 #SRC_URI="mirror://sourceforge/clamav/clamav-${VERSION}.tar.gz"
-md5sum=a158e74b3741a4b928bcbc17ab171690
+md5sum=2dd003807614ef53c5ab6c811273ff4e
 SRC_URI="http://pkgs.fedoraproject.org/repo/pkgs/clamav/clamav-${VERSION}-norar.tar.xz/${md5sum}/clamav-${VERSION}-norar.tar.xz"
 SRC_URI+="
 	http://database.clamav.net/main.cvd#/main-55.cvd
-	http://database.clamav.net/daily.cvd#/daily-20080.cvd
-	http://database.clamav.net/bytecode.cvd#/bytecode-246.cvd
+	http://database.clamav.net/daily.cvd#/daily-20394.cvd
+	http://database.clamav.net/bytecode.cvd#/bytecode-250.cvd
 "
 PATCH_URI="
 	http://pkgs.fedoraproject.org/cgit/clamav.git/plain/clamav-0.92-private.patch
 	0.97.8-db-install.patch
 	0.97.8-os-cygwin.patch
 	0.98.4-cygwin-hostid.patch
-	0.98.6-system-llvm.patch
 	0.98.6-system-libmspack.patch
 "
 
@@ -64,7 +63,7 @@ src_compile() {
 
 	cd ${B}
 	cygconf \
-		--enable-llvm --with-system-llvm \
+		--enable-llvm --with-system-llvm --with-llvm-linking=dynamic \
 		--enable-pthreads --disable-dependency-tracking \
 		--disable-clamav --disable-clamuko --disable-milter \
 		--disable-unrar \
