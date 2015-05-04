@@ -1,0 +1,25 @@
+As of LLVM 3.5, Cygwin is considered "the Cygnus toolchain for Windows"
+instead of a separate OS.
+
+--- origsrc/clamav-0.98.7/libclamav/c++/detect.cpp	2015-05-03 16:15:09.118565400 -0500
++++ src/clamav-0.98.7/libclamav/c++/detect.cpp	2015-05-03 18:43:49.776845100 -0500
+@@ -147,7 +147,9 @@ void cli_detect_env_jit(struct cli_envir
+ 	    env->os = llvm_os_UnknownOS;
+ 	    break;
+ 	CASE_OS(AuroraUX, os_solaris);
++#if LLVM_VERSION < 35
+ 	CASE_OS(Cygwin, os_cygwin);
++#endif
+ 	CASE_OS(Darwin, os_darwin);
+ 	CASE_OS(DragonFly, os_bsd);
+ 	CASE_OS(FreeBSD, os_bsd);
+@@ -166,6 +168,9 @@ void cli_detect_env_jit(struct cli_envir
+ 	case Triple::Win32:
+ 	     env->os = llvm_os_Win32;
+ 	     if (env->os_category != os_win32 &&
++#if LLVM_VERSION > 34
++		 env->os_category != os_cygwin &&
++#endif
+ 		 env->os_category != os_win64)
+ 		 warn_assumptions("Operating System", env->os_category, Triple::Win32);
+ 	     break;

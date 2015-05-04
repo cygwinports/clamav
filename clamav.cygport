@@ -1,6 +1,6 @@
 NAME="clamav"
 VERSION=0.98.7
-RELEASE=1
+RELEASE=2
 CATEGORY="Utils"
 SUMMARY="Anti-virus toolkit"
 DESCRIPTION="Clam AntiVirus is a GPL anti-virus toolkit for UNIX, featuring
@@ -14,8 +14,8 @@ md5sum=2dd003807614ef53c5ab6c811273ff4e
 SRC_URI="http://pkgs.fedoraproject.org/repo/pkgs/clamav/clamav-${VERSION}-norar.tar.xz/${md5sum}/clamav-${VERSION}-norar.tar.xz"
 SRC_URI+="
 	http://database.clamav.net/main.cvd#/main-55.cvd
-	http://database.clamav.net/daily.cvd#/daily-20394.cvd
-	http://database.clamav.net/bytecode.cvd#/bytecode-250.cvd
+	http://database.clamav.net/daily.cvd#/daily-20411.cvd
+	http://database.clamav.net/bytecode.cvd#/bytecode-254.cvd
 "
 PATCH_URI="
 	http://pkgs.fedoraproject.org/cgit/clamav.git/plain/clamav-0.92-private.patch
@@ -23,6 +23,7 @@ PATCH_URI="
 	0.97.8-os-cygwin.patch
 	0.98.4-cygwin-hostid.patch
 	0.98.6-system-libmspack.patch
+	0.98.7-cygwin-llvm35.patch
 "
 
 PKG_NAMES="clamav lib${NAME}6 lib${NAME}-devel ${NAME}-db"
