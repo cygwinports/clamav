@@ -9,7 +9,7 @@ support for digital signatures, virus scanner C library, detection of over
 20000 viruses, worms and trojans, built-in support for RAR (2.0), Zip, Gzip,
 Bzip2, built-in support for Mbox, Maildir and raw mail files"
 HOMEPAGE="http://clamav.net/"
-#SRC_URI="mirror://sourceforge/clamav/clamav-${VERSION}.tar.gz"
+#SRC_URI="http://www.clamav.net/downloads/production/clamav-${VERSION}.tar.gz"
 md5sum=2dd003807614ef53c5ab6c811273ff4e
 SRC_URI="http://pkgs.fedoraproject.org/repo/pkgs/clamav/clamav-${VERSION}-norar.tar.xz/${md5sum}/clamav-${VERSION}-norar.tar.xz"
 SRC_URI+="
