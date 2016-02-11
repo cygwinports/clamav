@@ -1,0 +1,42 @@
+--- origsrc/clamav-0.99/libclamav/c++/detect.cpp	2016-02-11 17:27:09.228223900 -0600
++++ src/clamav-0.99/libclamav/c++/detect.cpp	2016-02-11 14:30:14.227290000 -0600
+@@ -148,7 +148,9 @@ void cli_detect_env_jit(struct cli_envir
+ 	    env->os = llvm_os_UnknownOS;
+ 	    break;
+ 	CASE_OS(AuroraUX, os_solaris);
++#if LLVM_VERSION < 35
+ 	CASE_OS(Cygwin, os_cygwin);
++#endif
+ 	CASE_OS(Darwin, os_darwin);
+ 	CASE_OS(DragonFly, os_bsd);
+ 	CASE_OS(FreeBSD, os_bsd);
+@@ -167,6 +169,9 @@ void cli_detect_env_jit(struct cli_envir
+ 	case Triple::Win32:
+ 	     env->os = llvm_os_Win32;
+ 	     if (env->os_category != os_win32 &&
++#if LLVM_VERSION > 34
++		 env->os_category != os_cygwin &&
++#endif
+ 		 env->os_category != os_win64)
+ 		 warn_assumptions("Operating System", env->os_category, Triple::Win32);
+ 	     break;
+--- origsrc/clamav-0.99/libclamav/c++/llvm/lib/ExecutionEngine/JIT/JIT.cpp	2015-05-28 16:56:25.000000000 -0500
++++ src/clamav-0.99/libclamav/c++/llvm/lib/ExecutionEngine/JIT/JIT.cpp	2016-02-11 14:48:29.284844600 -0600
+@@ -67,7 +67,7 @@ extern "C" void LLVMLinkInJIT() {
+ }
+ 
+ 
+-#if defined(__GNUC__) && !defined(__ARM_EABI__) && !defined(__USING_SJLJ_EXCEPTIONS__)
++#if defined(__GNUC__) && !defined(__ARM_EABI__) && !defined(__USING_SJLJ_EXCEPTIONS__) && !defined(__SEH__)
+  
+ // libgcc defines the __register_frame function to dynamically register new
+ // dwarf frames for exception handling. This functionality is not portable
+@@ -309,7 +309,7 @@ JIT::JIT(Module *M, TargetMachine &tm, T
+   }
+   
+   // Register routine for informing unwinding runtime about new EH frames
+-#if defined(__GNUC__) && !defined(__ARM_EABI__) && !defined(__USING_SJLJ_EXCEPTIONS__)
++#if defined(__GNUC__) && !defined(__ARM_EABI__) && !defined(__USING_SJLJ_EXCEPTIONS__) && !defined(__SEH__)
+ #if USE_KEYMGR
+   struct LibgccObjectInfo* LOI = (struct LibgccObjectInfo*)
+     _keymgr_get_and_lock_processwide_ptr(KEYMGR_GCC3_DW2_OBJ_LIST);
