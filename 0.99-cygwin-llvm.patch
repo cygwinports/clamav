@@ -1,15 +1,51 @@
+--- origsrc/clamav-0.97.8/libclamav/bytecode_detect.c	2013-04-17 10:25:09.000000000 -0500
++++ src/clamav-0.97.8/libclamav/bytecode_detect.c	2013-05-13 10:38:51.962472500 -0500
+@@ -234,8 +234,10 @@ void cli_detect_environment(struct cli_e
+     env->os_category = os_win64;
+ #elif defined(_WIN32)
+     env->os_category = os_win32;
++#elif defined(__CYGWIN__)
++    env->os_category = os_cygwin;
+ #else
+-    env->os_category = os_generic;
++    env->os_category = os_unknown;
+ #endif
+ 
+     env->os = llvm_os_UnknownOS;
+--- origsrc/clamav-0.99/libclamav/bytecode_detect.h	2015-09-18 15:48:45.000000000 -0500
++++ src/clamav-0.99/libclamav/bytecode_detect.h	2016-03-28 21:03:39.381049300 -0500
+@@ -64,6 +64,7 @@ enum os_kind_conf {
+   os_solaris,
+   os_win32,
+   os_win64,
++  os_cygwin,
+   os_ANY = 0xff
+ };
+ 
+--- origsrc/clamav-0.97.8/libclamav/c++/bytecode2llvm.cpp	2013-04-17 10:25:09.000000000 -0500
++++ src/clamav-0.97.8/libclamav/c++/bytecode2llvm.cpp	2013-05-13 10:38:51.962472500 -0500
+@@ -330,6 +330,9 @@ extern "C" void __chkstk(void);
+ extern "C" void _chkstk(void);
+ #endif
+ #endif
++#ifdef __CYGWIN__
++extern "C" void _alloca(void);
++#endif
+ // Resolve integer libcalls, but nothing else.
+ static void* noUnknownFunctions(const std::string& name) {
+     void *addr =
+@@ -354,6 +357,9 @@ static void* noUnknownFunctions(const st
+ 	.Case("_chkstk", (void*)(intptr_t)_chkstk)
+ #endif
+ #endif
++#ifdef __CYGWIN__
++	.Case("_alloca", (void*)(intptr_t)_alloca)
++#endif
+ 	.Default(0);
+     if (addr)
+ 	return addr;
 --- origsrc/clamav-0.99/libclamav/c++/detect.cpp	2016-02-11 17:27:09.228223900 -0600
 +++ src/clamav-0.99/libclamav/c++/detect.cpp	2016-02-11 14:30:14.227290000 -0600
-@@ -148,7 +148,9 @@ void cli_detect_env_jit(struct cli_envir
- 	    env->os = llvm_os_UnknownOS;
- 	    break;
- 	CASE_OS(AuroraUX, os_solaris);
-+#if LLVM_VERSION < 35
- 	CASE_OS(Cygwin, os_cygwin);
-+#endif
- 	CASE_OS(Darwin, os_darwin);
- 	CASE_OS(DragonFly, os_bsd);
- 	CASE_OS(FreeBSD, os_bsd);
 @@ -167,6 +169,9 @@ void cli_detect_env_jit(struct cli_envir
  	case Triple::Win32:
  	     env->os = llvm_os_Win32;

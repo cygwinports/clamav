@@ -1,5 +1,5 @@
 NAME="clamav"
-VERSION=0.99
+VERSION=0.99.1
 RELEASE=1
 CATEGORY="Utils"
 SUMMARY="Anti-virus toolkit"
@@ -10,23 +10,26 @@ support for digital signatures, virus scanner C library, detection of over
 Bzip2, built-in support for Mbox, Maildir and raw mail files"
 HOMEPAGE="http://clamav.net/"
 #SRC_URI="http://www.clamav.net/downloads/production/clamav-${VERSION}.tar.gz"
-md5sum=a972a59e09ef86fdfaaf028f714996e5
+md5sum=6bf23527691890664c66e62e7bee44ff
 SRC_URI="http://pkgs.fedoraproject.org/repo/pkgs/clamav/clamav-${VERSION}-norar.tar.xz/${md5sum}/clamav-${VERSION}-norar.tar.xz"
 PATCH_URI="
 	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.99-private.patch
 	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.98.5-cliopts.patch
 	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.98-umask.patch
-	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.99-jitoff.patch
+	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.99.1-jitoff.patch
 	0.97.8-os-cygwin.patch
 	0.98.4-cygwin-hostid.patch
 	0.98.6-system-libmspack.patch
 	0.99-cygwin-llvm.patch
 "
 
-PKG_NAMES="clamav lib${NAME}7 lib${NAME}-devel"
-clamav_CONTENTS="etc/ usr/bin/*.exe usr/sbin/ usr/share/doc/ usr/share/man/"
+PKG_NAMES="clamav clamav-doc lib${NAME}7 lib${NAME}-devel"
+clamav_CONTENTS="--exclude=html --exclude=*.pdf
+	etc/ usr/bin/*.exe usr/sbin/ usr/share/doc/ usr/share/man/"
+clamav_doc_CATEGORY="Doc"
+clamav_doc_CONTENTS="usr/share/doc/clamav/html/ usr/share/doc/clamav/*.pdf"
 libclamav7_CATEGORY="Libs"
-libclamav7_REQUIRES="clamav-db"
+libclamav7_REQUIRES="clamav-db-main clamav-db-daily"
 libclamav7_CONTENTS="usr/bin/cygclamav-7.dll"
 libclamav_devel_CATEGORY="Libs"
 libclamav_devel_CONTENTS="usr/bin/clamav-config usr/include/ usr/lib/lib* usr/lib/pkgconfig/"
@@ -44,7 +47,7 @@ src_unpack_hook() {
 	# for system libmspack patch
 	rm -f libclamav/{chmunpack,mspack,cab,libmspack}.{c,h}
 
-	# we ship databases in separate clamav-db
+	# we ship databases in separate clamav-db-*
 	rm -f database/*.cvd
 }
 
@@ -57,9 +60,20 @@ src_compile() {
 	# between package's DESTDIR definition and an enum in w32api/objidl.h
 	CPPFLAGS+=" -DWIN32_LEAN_AND_MEAN"
 
+	if [ -x /usr/bin/llvm-config-3.5 ]
+	then
+		LLVM_SUFFIX=-3.5
+	elif [ -x /usr/bin/llvm-config-3.4 ]
+	then
+		LLVM_SUFFIX=-3.4
+	else
+		LLVM_SUFFIX=
+	fi
+
 	cd ${B}
 	cygconf \
-		--enable-llvm \
+		--enable-llvm --with-llvm-linking=dynamic \
+		--with-system-llvm=/usr/bin/llvm-config${LLVM_SUFFIX} \
 		--enable-pthreads --disable-dependency-tracking \
 		--disable-clamav --disable-clamuko --disable-milter \
 		--disable-unrar \
@@ -77,15 +91,15 @@ src_install() {
 
 	rm ${D}/usr/share/man/man*/clamav-milter*
 
-	cd ${S}
-	insinto /etc
-	newins etc/clamd.conf.sample clamd.conf
-	newins etc/freshclam.conf.sample freshclam.conf
+	mv ${D}/etc/clamd.conf{.sample,}
+	mv ${D}/etc/freshclam.conf{.sample,}
 	make_etc_defaults /etc/clamd.conf /etc/freshclam.conf
 
 	exeinto /etc/rc.d/init.d
-	doexe contrib/init/Cygwin/clamd
+	doexe ${S}/contrib/init/Cygwin/clamd
 }
 
 DOCS="COPYING.* docs/*.pdf"
 HTMLDOCS="docs/html/*"
+
+KEEP_LA_FILES=none
