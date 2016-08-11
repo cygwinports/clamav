@@ -1,5 +1,5 @@
 NAME="clamav"
-VERSION=0.99.1
+VERSION=0.99.2
 RELEASE=1
 CATEGORY="Utils"
 SUMMARY="Anti-virus toolkit"
@@ -10,17 +10,17 @@ support for digital signatures, virus scanner C library, detection of over
 Bzip2, built-in support for Mbox, Maildir and raw mail files"
 HOMEPAGE="http://clamav.net/"
 #SRC_URI="http://www.clamav.net/downloads/production/clamav-${VERSION}.tar.gz"
-md5sum=6bf23527691890664c66e62e7bee44ff
+md5sum=a4517adbd9c72a3fec3fbb1384dd3234
 SRC_URI="http://pkgs.fedoraproject.org/repo/pkgs/clamav/clamav-${VERSION}-norar.tar.xz/${md5sum}/clamav-${VERSION}-norar.tar.xz"
 PATCH_URI="
 	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.99-private.patch
-	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.98.5-cliopts.patch
 	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.98-umask.patch
 	http://pkgs.fedoraproject.org/cgit/rpms/clamav.git/plain/clamav-0.99.1-jitoff.patch
 	0.97.8-os-cygwin.patch
 	0.98.4-cygwin-hostid.patch
 	0.98.6-system-libmspack.patch
 	0.99-cygwin-llvm.patch
+	0.99.2-libfreshclam-build.patch
 "
 
 PKG_NAMES="clamav clamav-doc lib${NAME}7 lib${NAME}-devel"

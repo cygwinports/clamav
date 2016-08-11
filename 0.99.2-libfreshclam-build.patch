@@ -1,0 +1,11 @@
+--- origsrc/clamav-0.99.2/libfreshclam/Makefile.am	2016-04-22 10:02:19.000000000 -0500
++++ src/clamav-0.99.2/libfreshclam/Makefile.am	2016-05-13 16:17:29.004798000 -0500
+@@ -48,6 +48,8 @@ libfreshclam_la_SOURCES = \
+ 	libfreshclam.h
+ 
+ lib_LTLIBRARIES = libfreshclam.la
++libfreshclam_la_LDFLAGS = -no-undefined
++libfreshclam_la_LIBADD = $(top_builddir)/libclamav/libclamav.la
+ 
+ 
+ AM_CFLAGS=@WERR_CFLAGS@

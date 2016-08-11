@@ -98,7 +98,7 @@
 +	chmod g+w $LOGFILE $PIDFILE
 +	rm -f $SOCKET
 +	#it was compiled with uid=18
-+	cygrunsrv --install $prog --path $DAEMON -e CYGWIN="$CYGWIN" --disp "CYGWIN `$DAEMON --version`"
++	cygrunsrv --install $prog --path $DAEMON -e CYGWIN="$CYGWIN" --disp "CYGWIN ClamAV daemon"
 +        echo "done."
 +}
 +uninstall() {
