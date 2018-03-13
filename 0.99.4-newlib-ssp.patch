@@ -1,0 +1,42 @@
+This should ultimately be fixed in <ssp/stdio.h> itself.
+
+--- origsrc/clamav-0.99.4/libclamav/fmap.c	2018-02-16 16:40:27.000000000 -0600
++++ src/clamav-0.99.4/libclamav/fmap.c	2018-03-02 17:23:46.619101600 -0600
+@@ -274,7 +274,7 @@ extern cl_fmap_t *cl_fmap_open_handle(vo
+     m->unmap = use_aging ? unmap_mmap : unmap_malloc;
+     m->need = handle_need;
+     m->need_offstr = handle_need_offstr;
+-    m->gets = handle_gets;
++    m->getter = handle_gets;
+     m->unneed_off = handle_unneed_off;
+     return m;
+ }
+@@ -664,7 +664,7 @@ extern cl_fmap_t *cl_fmap_open_memory(co
+     m->unmap = unmap_malloc;
+     m->need = mem_need;
+     m->need_offstr = mem_need_offstr;
+-    m->gets = mem_gets;
++    m->getter = mem_gets;
+     m->unneed_off = mem_unneed_off;
+     return m;
+ }
+--- origsrc/clamav-0.99.4/libclamav/fmap.h	2018-02-16 16:40:27.000000000 -0600
++++ src/clamav-0.99.4/libclamav/fmap.h	2018-03-02 17:24:09.505694100 -0600
+@@ -74,7 +74,7 @@ struct cl_fmap {
+     void        (*unmap)(fmap_t*);
+     const void* (*need)(fmap_t*, size_t at, size_t len, int lock);
+     const void* (*need_offstr)(fmap_t*, size_t at, size_t len_hint);
+-    const void* (*gets)(fmap_t*, char *dst, size_t *at, size_t max_len);
++    const void* (*getter)(fmap_t*, char *dst, size_t *at, size_t max_len);
+     void        (*unneed_off)(fmap_t*, size_t at, size_t len);
+ #ifdef _WIN32
+     HANDLE fh;
+@@ -156,7 +156,7 @@ static inline const void *fmap_need_offs
+ }
+ 
+ static inline const void *fmap_gets(fmap_t *m, char *dst, size_t *at, size_t max_len) {
+-    return m->gets(m, dst, at, max_len);
++    return m->getter(m, dst, at, max_len);
+ }
+ 
+ static inline const void *fmap_need_off_once_len(fmap_t *m, size_t at, size_t len, size_t *lenout)
